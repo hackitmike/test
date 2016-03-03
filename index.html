@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<title>Course player</title>
+
+<meta name="viewport" content="user-scalable=no, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<style>
+  body { margin: 0; padding: 0; }
+</style>
+
+</head>
+
+<body>
+
+<div class="app"></div>
+
+<script>
+
+(function() {
+  function loadScript(src, onload) {
+    var tag = document.createElement('script');
+    tag.src = src;
+    tag.async = true;
+    tag.onload = onload;
+    tag.onerror = function(err) {
+      console.error(err);
+    };
+
+    document.head.appendChild(tag);
+  }
+
+  function loadPlayerStyles(options) {
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = options.playerRoot + '/browser.css';
+
+    document.head.appendChild(link);
+  }
+//
+  function loadVendor(options, next) {
+    loadScript(options.playerRoot + '/vendor.js', next);
+  }
+
+  function loadBrowser(options, next) {
+    loadScript(options.playerRoot + '/browser.js', next);
+  }
+
+  function launchPlayer(playerOptions) {
+    if(!playerOptions.courseId) {
+      console.error('A course id is required');
+      return;
+    }
+
+    if(!window.launchVersalPlayer) {
+      console.error('Critical error: window.launchVersalPlayer not found!');
+      return;
+    }
+
+    var container = document.querySelector('.app');
+    if(container) {
+      window.launchVersalPlayer(container, playerOptions);
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', function() {
+    var searchString = window.location.search.slice(1) // slice off prefix'd `?`
+    var urlConfig = searchString.split('&').reduce(function(config, rawPair) {
+      var keyVal = rawPair.split('=')
+      var val = keyVal.pop()
+      var key = keyVal.pop()
+      config[key] = val
+      return config
+    }, {})
+
+    var options = {
+      playerRoot: 'commits/' + urlConfig.commit,
+      playerOptions: {
+        apiUrl: 'https://stagingstack.versal.com/api2'
+      }
+    }
+
+    if (urlConfig.apiHost) {
+      options.playerOptions.apiUrl = 'https://' + urlConfig.apiHost + '/api2'
+    }
+
+    Object.keys(urlConfig).forEach(function(key) {
+      options.playerOptions[key] = urlConfig[key]
+    })
+
+    loadPlayerStyles(options)
+    loadVendor(options, function() {
+      loadBrowser(options, function() {
+        launchPlayer(options.playerOptions)
+      })
+    })
+  })
+})()
+
+</script>
+
+</body>
+</html>
